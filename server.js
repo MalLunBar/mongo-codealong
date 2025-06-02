@@ -66,6 +66,25 @@ app.get('/authors', async (req, res) => {
   res.json(authors)
 })
 
+app.get('/authors/:id', async (req, res) => {
+  const author = await Author.findById(req.params.id)
+  if (author) {
+    res.json(author)
+  } else {
+    res.status(404).json({ error: 'Author not found' })
+  }
+})
+
+app.get('/authors/:id/books', async (req, res) => {
+  const author = await Author.findById(req.params.id)
+  if (author) {
+    const books = await Book.find({ author: mongoose.Types.ObjectId.createFromHexString(author.id) })
+    res.json(books)
+  } else {
+    res.status(404).json({ error: 'Author not found' })
+  }
+})
+
 app.get('/books', async (req, res) => {
   const books = await Book.find().populate('author')
   res.json(books)
