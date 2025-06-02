@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 
+
 const mongoUrl = process.env.MONGO_URL || "mongodb://localhost/books"
 mongoose.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true })
 mongoose.Promise = Promise
@@ -16,6 +17,24 @@ const Book = mongoose.model('Book', {
   author: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Author'
+  }
+})
+
+// Defines the port the app will run on. Defaults to 8080, but can be overridden
+// when starting the server. Example command to overwrite PORT env variable value:
+// PORT=9000 npm start
+const port = process.env.PORT || 8080;
+const app = express();
+
+// Add middlewares to enable cors and json body parsing
+app.use(cors());
+app.use(express.json());
+
+app.use((req, res, next) => {
+  if (mongoose.connection.readyState === 1) {
+    next()
+  } else {
+    res.status(503).json({ error: "Service unavailable" })
   }
 })
 
@@ -46,15 +65,7 @@ if (process.env.RESET_DATABASE) {
   }
   seedDatabase()
 }
-// Defines the port the app will run on. Defaults to 8080, but can be overridden
-// when starting the server. Example command to overwrite PORT env variable value:
-// PORT=9000 npm start
-const port = process.env.PORT || 8080;
-const app = express();
 
-// Add middlewares to enable cors and json body parsing
-app.use(cors());
-app.use(express.json());
 
 // Start defining your routes here
 app.get("/", (req, res) => {
@@ -67,21 +78,32 @@ app.get('/authors', async (req, res) => {
 })
 
 app.get('/authors/:id', async (req, res) => {
-  const author = await Author.findById(req.params.id)
-  if (author) {
-    res.json(author)
-  } else {
-    res.status(404).json({ error: 'Author not found' })
+  try {
+    const author = await Author.findById(req.params.id)
+
+    if (author) {
+      res.json(author)
+    } else {
+      res.status(404).json({ error: 'Author not found' })
+    }
+  } catch (err) {
+    res.status(400).json({ error: 'Invalid author id' })
   }
+
 })
 
 app.get('/authors/:id/books', async (req, res) => {
-  const author = await Author.findById(req.params.id)
-  if (author) {
-    const books = await Book.find({ author: mongoose.Types.ObjectId.createFromHexString(author.id) })
-    res.json(books)
-  } else {
-    res.status(404).json({ error: 'Author not found' })
+  try {
+    const author = await Author.findById(req.params.id)
+
+    if (author) {
+      const books = await Book.find({ author: mongoose.Types.ObjectId.createFromHexString(author.id) })
+      res.json(books)
+    } else {
+      res.status(404).json({ error: 'Author not found' })
+    }
+  } catch (err) {
+    res.status(400).json({ error: 'Invalid author id' })
   }
 })
 
