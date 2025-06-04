@@ -1,11 +1,11 @@
-import express from "express";
 import cors from "cors";
+import express from "express";
 import mongoose from "mongoose";
 
-
 const mongoUrl = process.env.MONGO_URL || "mongodb://localhost/books"
-mongoose.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true })
-mongoose.Promise = Promise
+mongoose.connect(mongoUrl)
+//this is not needed anymore because Mongoose takes care of creating promise
+// mongoose.Promise = Promise
 
 const Author = mongoose.model('Author', {
   name: String
